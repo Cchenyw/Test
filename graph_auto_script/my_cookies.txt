@@ -1,0 +1,1 @@
+[{"domain": "user-dev4.tangees.com", "expiry": 1629791028, "httpOnly": true, "name": "qrcode_id", "path": "/", "secure": false, "value": "e0add601-659d-4473-ac8f-d6f251cdf3d1"}]
