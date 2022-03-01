@@ -64,16 +64,37 @@ def create_sdk_mission(info, contacts, cookies):
         logging.error('error, respond result:\n%s', str(mission_setting.text))
 
 
+# 重写轮询标注平台代码
+def new_mark_platform(call_id):
+    flag = 1
+    while flag == 1:
+        respond = requests.put(f'http://label-test.tangees.com/api/update_call_detail', headers={
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Cookie': 'sessionId=.eJwlzkEOAjEIQNG7dO2iBQqtlzFAIbqdcVbGu9vEC_z3P-WRR5zPcn8fV9zK47XKvQgYVszB3lgHmHV16aIoOCFheNr0QQs4WYIxoQ_juRIqMxO1qRo-sC1zYVFqMXfRfNeIPT0T5nIYvCp1gN5UDSHdUcQlyx65zjj-N9yUaDtRh8e2oNWJBlS-P06NNaM.YhxoVg.x9zaEHk0IfjjxblXu5BkVMlrooI; SecurityCenterDuId=IllPYTYvSllFMjBlRWFydTlGa1VVbHBRPSI.FP8Ygg.ci1U_236EBzbyRTDHosiKunL3Vk; accountCenterSessionId=.eJw9jt1Kw0AQRt9lr3uxO_szSe-LFEyKJSjxJszszNrWJkJTLSi-u0HByw_OOXxfZjiKWRtE8sicmIPmTAjZ5oLRcnI1JWJ2qNnWLmXvfbCxrl0oKFqJJotBuHaUgkbJFgJmYAEQzyFWEjlXFm0O5GNwJUfviYQhLQaKo7IUyazMpCrDTB86XN8GYbMudJ51ZYZy0fnwP99nvfx9TuCkQgsaEYrFxKCQuYpLa_4F2rv9667b-P7UXJtue2uO1ran_XjfvUD_ubk-P_WuHR_HZnyAXdfDIuYDTZOeF_mmbL5_ANehVXU.FP8ciw.r527vYu3wKtb0JQY8EBfqjbik5A'
+        }, json={
+            "call_id": call_id,
+            "intention_label": 1
+        })
+        if respond.status_code == 200:
+            flag = 0
+            print(f'call_id:{call_id},已标注！')
+        else:
+            print('暂时找不到任务...')
+            no_grass.mian_process.decode_msg(respond)
+            time.sleep(10)
+    return respond
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     mission_info = {
-        'name': '冒烟测试07',
+        'name': '冒烟测试21',
         'graph_id': '6184ad0aa3552266652dccf5',
         'version_id': '619e5cb0a355220c66266133',
         'call_line_model': 2,
         'call_port_ids': '61d6a114a35522259f5fe5c7',
-        'robot_ids': '6007e320e2854809335fa09b',
+        'robot_ids': '60e81728e285480159f317d7',
         'smart_diagnose_trigger': 1,
         'smart_diagnose_config': '{"open_filter_by_number":true,"harass_rule":{"filter_by_call_result":{"trigger":false},"filter_by_intention_result":{"trigger":false,"options":[]},"filter_by_days_anti_harass":{"trigger":false}}}',
         'showRule': 'false',
@@ -91,6 +112,16 @@ if __name__ == "__main__":
     }
     cookie = no_grass.mian_process.get_cookie()
     task = create_sdk_mission(info=mission_info, cookies=cookie,
-                              contacts=[(17520544566, '公司', '联系人'), (18218644344, '公司', '联系人')])
-    print(task)
-    no_grass.mian_process.is_finish_mission(task, cookie)
+                              contacts=[(17520544566, '联系人', '公司'), (18218644344, '联系人', '公司')])
+    if type(task) == str:
+        # 启动任务
+        no_grass.mian_process.start_mission(task_id=task, cookies=cookie)
+        # 检查任务完成情况
+        no_grass.mian_process.is_finish_mission(task_id=task, cookies=cookie)
+        # 获取可标注号码
+        call_id_list = no_grass.mian_process.get_call_id_list(task_id=task, cookies=cookie)
+        # 第一次标注
+        for call_id in call_id_list:
+            new_mark_platform(call_id)
+        # 外呼工作台
+        # 第二次标注
