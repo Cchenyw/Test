@@ -1,13 +1,27 @@
 import json
+import os
+import sys
 import time
 import logging
+import logging.config
 
 import requests
 
-import no_grass.mian_process
+import mian_process
 
 test = 'https://call-test.tangees.com'
 base_url = test
+
+
+# 配置logging,初始化
+def initial_logging():
+    logging.config.fileConfig('../logging.ini')
+    logger_1 = logging.getLogger('h1')
+    logger_1.debug('initial debug message')
+    logger_1.info('initial info message')
+    logger_1.warning('initial warning message')
+    logger_1.error('initial error message')
+    logger_1.critical('initial critical message')
 
 
 def reformat_contact_datas(contacts=[(17520544566, '公司', '联系人')]):
@@ -79,17 +93,16 @@ def new_mark_platform(call_id):
             flag = 0
             print(f'call_id:{call_id},已标注！')
         else:
-            print('暂时找不到任务...')
-            no_grass.mian_process.decode_msg(respond)
+            mian_process.decode_msg(respond)
             time.sleep(10)
     return respond
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-
+    initial_logging()
+    logging.basicConfig(level=logging.ERROR)
     mission_info = {
-        'name': '冒烟测试21',
+        'name': '地产：任务11',
         'graph_id': '6184ad0aa3552266652dccf5',
         'version_id': '619e5cb0a355220c66266133',
         'call_line_model': 2,
@@ -103,23 +116,23 @@ if __name__ == "__main__":
         'smart_schedule_trigger': 1,
         'is_timed_task': 0,
         'redial_trigger': 0,
-        'label_type': 2,
+        'label_type': 2,  # 寸草/地产
         'label_trigger': 1,
         'cc_assign_trigger': 1,
         'cc_assign_strategy': 2,
         'label_intentions': '一秒就行,AI推荐',
         'cc_assign_ids': '6185e2aa283ae57b54afe893_498300240'
     }
-    cookie = no_grass.mian_process.get_cookie()
+    cookie = mian_process.get_cookie()
     task = create_sdk_mission(info=mission_info, cookies=cookie,
                               contacts=[(17520544566, '联系人', '公司'), (18218644344, '联系人', '公司')])
     if type(task) == str:
         # 启动任务
-        no_grass.mian_process.start_mission(task_id=task, cookies=cookie)
+        mian_process.start_mission(task_id=task, cookies=cookie)
         # 检查任务完成情况
-        no_grass.mian_process.is_finish_mission(task_id=task, cookies=cookie)
+        mian_process.is_finish_mission(task_id=task, cookies=cookie)
         # 获取可标注号码
-        call_id_list = no_grass.mian_process.get_call_id_list(task_id=task, cookies=cookie)
+        call_id_list = mian_process.get_call_id_list(task_id=task, cookies=cookie)
         # 第一次标注
         for call_id in call_id_list:
             new_mark_platform(call_id)
