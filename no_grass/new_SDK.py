@@ -100,7 +100,6 @@ def new_mark_platform(call_id):
 
 if __name__ == "__main__":
     initial_logging()
-    logging.basicConfig(level=logging.ERROR)
     mission_info = {
         'name': '地产：任务11',
         'graph_id': '6184ad0aa3552266652dccf5',
