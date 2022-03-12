@@ -12,10 +12,10 @@ dev = 'http://call-dev.tangees.com'
 uat = 'https://call-uat.tangees.com'
 user = 'https//call-uat.tangee.com'
 test = 'https://call-test.tangees.com'
-base_url = test
+base_url = uat
 
 # 标注平台环境
-mark_platform_env = 'test'
+mark_platform_env = 'uat'
 
 
 # 新建任务
@@ -59,9 +59,10 @@ def get_cookie():
             cookies = json.loads(f.read())
             return cookies
     # 获取Cookies失败、Cookies过期=>更新Cookies，并重新获取
-    except Exception:
-        update_cookie()
-        get_cookie()
+    except Exception as e:
+        print('error:' + e)
+        # update_cookie()
+        # get_cookie()
 
 
 # 更新cookie
@@ -220,7 +221,7 @@ def ask_mark_platform(call_id):
     while flag == 1:
         respond = requests.put(f'http://label-{mark_platform_env}.tangees.com/api/update_call_detail', headers={
             'Content-Type': 'application/json;charset=UTF-8',
-            'Cookie': 'sessionId=.eJw1zjtuAzEMANG7qE5BSiJF-TIGv4gLG8HaroLcPQsEqaaY5n23ax35_GyX1_HOj3a9Rbs0zSDwLbp4AcyFYckCwCNnoREEIwyj5Tl8JIGJEdJZMlOdIYmrZIup14RKjjhH785zYFq4M9uqTWUkuJMESlfGRNPq0E7IVx53feTj9U97P_P44zGONZV8aw2TzbN37ObRfn4Brx49AA.FJsViA.LMxgPR22k29dSbDl6HbmW-33DqI; sessionId=.eJwlzjkOAjEMAMC_pKaIE598BsWOLWh3oUL8HSSaqefdbnXkeW_X5_HKS7s9dru2ZUUs3YTCh_cfa8dQR5rm3UnJXJRRJWQDzF0cHAoIXIUwanBlWRpRqqJgpVSsQqVhPAM2RCTtcMOZe_ki2jSBEleH8PaLvM48_hsGc-zEgcnYh1CVdqHRPl9u4DW8.YbmE-g.5b0E_HwVDfjPs5J3SWb3iAbJVgA; accountCenterSessionId=.eJw9jk1Lw0AQhv_LnnuY2Z3JbnoT6qVoSsFSmkvYjxnbkFRookLF_25Q8PjC-zw8X6a7FLM2zoMmJMlBi5LaRJGzU_Qlog8EoUZOqliiy6LIwTuoSMAheYnkHHirHpUTClWe44IpJBdr8ZmKlQDiGGsPJJxZEgNXOXiiUEeK1qzMVaR0U_yQbn7rSjJrjcMkK9PpTabz_3yf5PbXXGGqOdklx5UUKwgoFRblxTX9Hk7HPZ76B9u8HOZ2bIbnC0DbD-PTcdvvNo_zbvN6b-x2bMe9bfvDfQHzOV6vMizwpyTz_QNdN1Vz.FJsWhA.6ePZX_fi03lMKeq3orVTfhYIZ5Q'
+            'Cookie': 'SecurityCenterDuId=IllPYTYvSllFMjBlRWFydTlGa1VVbHBRPSI.FQmYSA.RKJBBvFEInYEwLHYE3w8G9CDAOY; sessionId=.eJw1zjEOwjAMQNG7ZGZwEsexe5nKcWzBAEKlnRB3pxJi-9PXe6c1Nn9d07Jvh1_SeptpSTC6EnOtIXam9YLs0QYBSp4WbfaZBcN4DszaYlKTggbkzQnq5IBmgdFDuVguhgO7e1EQjfMaKlx7zQaj2kQWKKPIOeKGo2M6IU_f7vrwx_6nHS_ffjwqEOSZlNW1OjQSpKw9fb6gGzxH.FQs90g.suYiFdYirxN6P2cuYD2xywgg_RE; sessionId=.eJwljjsOwzAMQ-_iuYMtS7KdywTWD-2aNFPRu9dFVj6CfJ-0x-HnM23v4_JH2l-WtiTELdsws8qkomwutdMcuohOa4gU_wox9SyCQ4krdgKGGaitTCkei9bWwUwiOooREZhmFK1GKy3m5lyYwlqFGhiFEZA5LZHr9OO24TIE8zpGZ8zQaK3lRpC-P6eQNbA.Yimu5g.k5HBJmpseIYvl2zQBfigBiunw_o; accountCenterSessionId=.eJw1jstOwzAQRf_FaxZje_xIdyxQNzRRqwoUNtHYM1aANkhNoCKIf8cCsZyrufecL_U-y2V4ZrVR3pgIPseiLSdyno0NLqagbtRQLjKPalPoNEs9__6FsgOfMCZglyhqa3VDBIUbCQhoxSInX0hncbnJLiFmR0ARChryMQSPoRFXinhmDQGNz9qzdrEpGBiMjcFUgPgKsrXpbIUBMGZO1WsS4WGmDxmWt6Em_4Lzr-DT-XBuzZ1pX_ZLu95e-0-Abvsw3h9f192xX_r1MHbb3vbrDrvH_bUO5pGmSU61fJWkvn8AeqxVQg.FQtAyQ.Xnh-mcg9cSn_BGI7KZJS8ZPkvOA'
         }, json={
             "call_id": call_id,
             "intention_label": 1

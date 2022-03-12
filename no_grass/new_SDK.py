@@ -1,6 +1,4 @@
 import json
-import os
-import sys
 import time
 import logging
 import logging.config
@@ -9,8 +7,7 @@ import requests
 
 import mian_process
 
-test = 'https://call-test.tangees.com'
-base_url = test
+base_url = mian_process.base_url
 
 
 # 配置logging,初始化
@@ -37,6 +34,7 @@ def reformat_contact_datas(contacts=[(17520544566, '公司', '联系人')]):
         }
         contact_datas.append(contact_data)
         count += count
+        contact_data.clear()
     json_datas = json.dumps(contact_datas)
     return json_datas
 
@@ -78,21 +76,47 @@ def create_sdk_mission(info, contacts, cookies):
         logging.error('error, respond result:\n%s', str(mission_setting.text))
 
 
-# 重写轮询标注平台代码
-def new_mark_platform(call_id):
-    flag = 1
-    while flag == 1:
-        respond = requests.put(f'http://label-test.tangees.com/api/update_call_detail', headers={
-            'Content-Type': 'application/json;charset=UTF-8',
+# 外呼工作台
+def check_work_space(cookies, params=[1, 200]):
+    # my_task
+    my_task = requests.get(f'{base_url}/api/call-leads/my_task', params={
+        'page': str(params[0]),
+        'page_size': str(params[1])
+    }, cookies={
+        "accountCenterSessionId": ".eJw9jstKw1AURf_ljju479N0XCdFk4ERSSfhvG7SBxGaqFDx3w0KDjfstVhfpj-J2RkADECUiaIyI3i2XCBZyq7CjEQOlG3lMocQok1V5WIB0a1othCFKoc5ahK2PgJ7Eu8lUExbScRbC5YjhhRd4RQCopDPKwHisKxGNBszqUo_44f2y1svZHYFr7NuTF9uOo__833W219z9k7Fs2oCXyxk8up5jVxd8--hO9enpq1PdTssT_chNc_WHtvL_bEdL91rt9T7IR3bw_l4fgjN_sWtII84TXpd4U8l8_0DI11WVg.FQBoqw.9tQ3woJxLIchbtq2VSygsrzevgE"})
+    print(my_task.text)
+    # my_called
+    my_called = requests.get(f'{base_url}/api/call-leads/my_called', params={
+        'page': params[0],
+        'page_size': params[1]
+    }, cookies={
+        "accountCenterSessionId": ".eJw9jstKw1AURf_ljju479N0XCdFk4ERSSfhvG7SBxGaqFDx3w0KDjfstVhfpj-J2RkADECUiaIyI3i2XCBZyq7CjEQOlG3lMocQok1V5WIB0a1othCFKoc5ahK2PgJ7Eu8lUExbScRbC5YjhhRd4RQCopDPKwHisKxGNBszqUo_44f2y1svZHYFr7NuTF9uOo__833W219z9k7Fs2oCXyxk8up5jVxd8--hO9enpq1PdTssT_chNc_WHtvL_bEdL91rt9T7IR3bw_l4fgjN_sWtII84TXpd4U8l8_0DI11WVg.FQBoqw.9tQ3woJxLIchbtq2VSygsrzevgE"})
+    return my_task, my_called
+
+
+# 检查二次推送
+def check_push_mark_platform():
+    mark_platform_env = mian_process.mark_platform_env
+    while True:
+        respond = requests.get(f'http://label-{mark_platform_env}.tangees.com/api/easy-lead/get_call_detail', headers={
             'Cookie': 'sessionId=.eJwlzkEOAjEIQNG7dO2iBQqtlzFAIbqdcVbGu9vEC_z3P-WRR5zPcn8fV9zK47XKvQgYVszB3lgHmHV16aIoOCFheNr0QQs4WYIxoQ_juRIqMxO1qRo-sC1zYVFqMXfRfNeIPT0T5nIYvCp1gN5UDSHdUcQlyx65zjj-N9yUaDtRh8e2oNWJBlS-P06NNaM.YhxoVg.x9zaEHk0IfjjxblXu5BkVMlrooI; SecurityCenterDuId=IllPYTYvSllFMjBlRWFydTlGa1VVbHBRPSI.FP8Ygg.ci1U_236EBzbyRTDHosiKunL3Vk; accountCenterSessionId=.eJw9jt1Kw0AQRt9lr3uxO_szSe-LFEyKJSjxJszszNrWJkJTLSi-u0HByw_OOXxfZjiKWRtE8sicmIPmTAjZ5oLRcnI1JWJ2qNnWLmXvfbCxrl0oKFqJJotBuHaUgkbJFgJmYAEQzyFWEjlXFm0O5GNwJUfviYQhLQaKo7IUyazMpCrDTB86XN8GYbMudJ51ZYZy0fnwP99nvfx9TuCkQgsaEYrFxKCQuYpLa_4F2rv9667b-P7UXJtue2uO1ran_XjfvUD_ubk-P_WuHR_HZnyAXdfDIuYDTZOeF_mmbL5_ANehVXU.FP8ciw.r527vYu3wKtb0JQY8EBfqjbik5A'
-        }, json={
-            "call_id": call_id,
-            "intention_label": 1
         })
         if respond.status_code == 200:
-            flag = 0
-            print(f'call_id:{call_id},已标注！')
+            if respond.json()['stat'] == 1:
+                logging.info('success')
+                id_dict = {
+                    'call_lead_id': respond.json()['data']['label_detail']['call_lead_id'],
+                    'call_detail_id': respond.json()['data']['label_detail']['call_detail_id']
+                }
+                logging.debug(f'id_dict:\n{id_dict}')
+                return id_dict
+            elif respond.json()['stat'] == 0:
+                msg = respond.json()['msg']
+                logging.info('NOT FOUND...reason:%s' % mian_process.decode_msg(msg))
+                time.sleep(20)
         else:
+            # 有时候会自动退出 标注平台抽风 所以出现这种状态 要再次循环
+            logging.error('requested fail')
             mian_process.decode_msg(respond)
             time.sleep(10)
     return respond
@@ -101,12 +125,12 @@ def new_mark_platform(call_id):
 if __name__ == "__main__":
     initial_logging()
     mission_info = {
-        'name': '地产：任务11',
-        'graph_id': '6184ad0aa3552266652dccf5',
-        'version_id': '619e5cb0a355220c66266133',
+        'name': '验收流程测试01',
+        'graph_id': '618b68c394b3a13ac77bc2a4',
+        'version_id': '619e4bc694b3a1459e0bffa8',
         'call_line_model': 2,
-        'call_port_ids': '61d6a114a35522259f5fe5c7',
-        'robot_ids': '60e81728e285480159f317d7',
+        'call_port_ids': '61d8f87494b3a10bf1330ae0',
+        'robot_ids': '6007e320e2854809335fa095',
         'smart_diagnose_trigger': 1,
         'smart_diagnose_config': '{"open_filter_by_number":true,"harass_rule":{"filter_by_call_result":{"trigger":false},"filter_by_intention_result":{"trigger":false,"options":[]},"filter_by_days_anti_harass":{"trigger":false}}}',
         'showRule': 'false',
@@ -115,12 +139,12 @@ if __name__ == "__main__":
         'smart_schedule_trigger': 1,
         'is_timed_task': 0,
         'redial_trigger': 0,
-        'label_type': 2,  # 寸草/地产
+        'label_type': 1,  # 寸草/地产
         'label_trigger': 1,
         'cc_assign_trigger': 1,
         'cc_assign_strategy': 2,
-        'label_intentions': '一秒就行,AI推荐',
-        'cc_assign_ids': '6185e2aa283ae57b54afe893_498300240'
+        'label_intentions': '1s即可,AI推荐',
+        'cc_assign_ids': '618b674f97e9717f37a8be8f_564609786' # jiahua 61dc010797e971253dc4577a_779901499 chen 618b674f97e9717f37a8be8f_564609786
     }
     cookie = mian_process.get_cookie()
     task = create_sdk_mission(info=mission_info, cookies=cookie,
@@ -134,6 +158,7 @@ if __name__ == "__main__":
         call_id_list = mian_process.get_call_id_list(task_id=task, cookies=cookie)
         # 第一次标注
         for call_id in call_id_list:
-            new_mark_platform(call_id)
-        # 外呼工作台
-        # 第二次标注
+            mian_process.ask_mark_platform(call_id)
+    #     # 外呼工作台
+    # # 第二次标注
+    # check_push_mark_platform()
